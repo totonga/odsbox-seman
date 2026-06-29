@@ -1,0 +1,116 @@
+[project]
+name = "odsbox-seman"
+version = "0.1.0"
+description = "Lightweight semantic search for ASAM ODS models using ONNX embeddings"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.14"
+authors = [
+    { name = "totonga", email = "totonga@gmail.com" },
+]
+keywords = ["ASAM", "ODS", "semantic", "search", "embedding", "ONNX"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Database :: Front-Ends",
+]
+dependencies = [
+    "huggingface-hub>=0.20.0",
+    "numpy>=1.24",
+    "odsbox>=1.4.1",
+    "onnxruntime>=1.16",
+    "transformers>=4.35",
+]
+
+[project.optional-dependencies]
+# CUDA support — install onnxruntime-gpu instead of onnxruntime
+gpu = [
+    "onnxruntime-gpu>=1.16",
+]
+# Windows Copilot+ NPU/GPU (DirectML) — no Python 3.14 wheels yet;
+# npu = ["onnxruntime-directml>=1.16"]
+
+[project.urls]
+Homepage = "https://github.com/totonga/odsbox-seman"
+Repository = "https://github.com/totonga/odsbox-seman"
+Issues = "https://github.com/totonga/odsbox-seman/issues"
+Changelog = "https://github.com/totonga/odsbox-seman/releases"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.20.2",
+    "pip-audit>=2.9.0",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "pytest-mock>=3.14.0",
+    "python-semantic-release>=9.0.0",
+    "ruff>=0.15.20",
+]
+
+[tool.uv]
+constraint-dependencies = [
+    "cryptography>=48.0.1",  # GHSA-537c-gmf6-5ccf
+    "idna>=3.15",            # CVE-2026-45409
+    "pip>=26.1",             # CVE-2026-6357
+    "urllib3>=2.7.0",        # PYSEC-2026-141, PYSEC-2026-142
+]
+
+[build-system]
+requires = ["uv_build>=0.6,<0.12"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+    "integration: tests that require ONNX model download and real encoding",
+]
+addopts = "--cov=src --cov-report=term-missing --cov-fail-under=85"
+
+[tool.coverage.run]
+branch = true
+omit = ["*/__main__.py"]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+ignore_missing_imports = true
+exclude = ["temp/"]
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+version_variables = ["src/odsbox_seman/__init__.py:__version__"]
+tag_format = "v{version}"
+build_command = "uv build"
+
+[tool.semantic_release.branches.main]
+match = "main"
+prerelease = false
+
+[tool.semantic_release.changelog]
+exclude_commit_patterns = ["^Merge", "^chore", "^docs", "^test", "^refactor", "^style", "^ci"]
