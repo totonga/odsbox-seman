@@ -42,10 +42,10 @@ This installs `onnxruntime-gpu` for NVIDIA GPU acceleration.
 
 ### DirectML Support (Windows Copilot+ NPU/GPU)
 
-DirectML (Windows native GPU) support is available but requires manual setup — `onnxruntime-directml` does not yet have Python 3.14 wheels. Install it separately:
+DirectML (Windows native GPU) support is available via the `npu` extra:
 
 ```bash
-pip install onnxruntime-directml
+pip install odsbox-seman[npu]
 ```
 
 The package will auto-detect and use DirectML if available.
