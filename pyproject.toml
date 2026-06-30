@@ -43,6 +43,7 @@ Repository = "https://github.com/totonga/odsbox-seman"
 Issues = "https://github.com/totonga/odsbox-seman/issues"
 Changelog = "https://github.com/totonga/odsbox-seman/releases"
 
+
 [dependency-groups]
 dev = [
     "mypy>=1.20.2",
@@ -62,10 +63,6 @@ constraint-dependencies = [
     "urllib3>=2.7.0",        # PYSEC-2026-141, PYSEC-2026-142
 ]
 
-[build-system]
-requires = ["uv_build>=0.6,<0.12"]
-build-backend = "uv_build"
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
@@ -73,6 +70,7 @@ markers = [
     "integration: tests that require ONNX model download and real encoding",
 ]
 # addopts = "--cov=src --cov-report=term-missing --cov-fail-under=85"
+
 
 [tool.coverage.run]
 branch = true
@@ -89,6 +87,7 @@ exclude_lines = [
     "if TYPE_CHECKING:",
 ]
 
+
 [tool.ruff]
 line-length = 100
 target-version = "py314"
@@ -96,6 +95,7 @@ target-version = "py314"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
 ignore = ["E501"]
+
 
 [tool.mypy]
 python_version = "3.14"
@@ -115,3 +115,8 @@ prerelease = false
 
 [tool.semantic_release.changelog]
 exclude_commit_patterns = ["^Merge", "^chore", "^docs", "^test", "^refactor", "^style", "^ci"]
+
+[build-system]
+requires = ["uv_build>=0.6,<0.12"]
+build-backend = "uv_build"
+
