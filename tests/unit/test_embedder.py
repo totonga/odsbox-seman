@@ -273,19 +273,21 @@ class TestOnnxEmbedderInit:
         call_kwargs = mock_session.run.call_args[0][1]
         # Must have been filled with zeros fallback
         assert "token_type_ids" in call_kwargs
-        np.testing.assert_array_equal(call_kwargs["token_type_ids"], np.zeros((1, 3), dtype=np.int64))
+        np.testing.assert_array_equal(
+            call_kwargs["token_type_ids"], np.zeros((1, 3), dtype=np.int64)
+        )
         assert result.shape == (1, 8)
 
     def test_encode_batching_splits_large_input(self, mocker: Any) -> None:
         """When len(texts) > _BATCH_SIZE, encode() splits into chunks and concatenates."""
-        from odsbox_seman.embedder import OnnxEmbedder, _BATCH_SIZE
+        from odsbox_seman.embedder import _BATCH_SIZE, OnnxEmbedder
 
         n = _BATCH_SIZE + 5  # just over the batch boundary
         texts = [f"text {i}" for i in range(n)]
         dim = 8
 
         # Each call to the tokenizer/session returns a unit-vector batch
-        def make_tokenizer_output(batch: list[str]) -> dict[str, np.ndarray]:  # type: ignore[type-arg]
+        def make_tokenizer_output(batch: list[str]) -> dict[str, np.ndarray]:
             b = len(batch)
             return {
                 "input_ids": np.ones((b, 4), dtype=np.int64),
@@ -294,7 +296,7 @@ class TestOnnxEmbedderInit:
 
         call_count = 0
 
-        def tokenizer_side_effect(*args: object, **kwargs: object) -> dict[str, np.ndarray]:  # type: ignore[type-arg]
+        def tokenizer_side_effect(*args: object, **kwargs: object) -> dict[str, np.ndarray]:
             nonlocal call_count
             batch_texts = args[0] if args else kwargs.get("text", [])
             call_count += 1
@@ -303,8 +305,9 @@ class TestOnnxEmbedderInit:
         mock_tokenizer = MagicMock(side_effect=tokenizer_side_effect)
 
         def session_run_side_effect(
-            output_names: object, inputs: dict[str, np.ndarray]  # type: ignore[type-arg]
-        ) -> list[np.ndarray]:  # type: ignore[type-arg]
+            output_names: object,
+            inputs: dict[str, np.ndarray],
+        ) -> list[np.ndarray]:
             b = inputs["input_ids"].shape[0]
             return [np.ones((b, 4, dim), dtype=np.float32)]
 

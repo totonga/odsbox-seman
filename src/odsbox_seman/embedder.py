@@ -145,9 +145,7 @@ class OnnxEmbedder:
 
         return self._encode_batch(texts, normalize=normalize)
 
-    def _encode_batch(
-        self, texts: list[str], *, normalize: bool = True
-    ) -> npt.NDArray[np.float32]:
+    def _encode_batch(self, texts: list[str], *, normalize: bool = True) -> npt.NDArray[np.float32]:
         """Encode a single batch of texts (no further chunking)."""
         assert self._tokenizer is not None  # noqa: S101
         assert self._session is not None  # noqa: S101
@@ -180,7 +178,7 @@ class OnnxEmbedder:
             else:
                 ort_inputs["token_type_ids"] = np.zeros_like(input_ids)
 
-        outputs = session.run(None, ort_inputs)  # type: ignore[arg-type]
+        outputs = session.run(None, ort_inputs)
 
         # Mean-pool the last hidden state over non-padding tokens
         last_hidden: npt.NDArray[np.float32] = outputs[0]
