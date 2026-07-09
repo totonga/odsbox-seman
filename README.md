@@ -91,6 +91,8 @@ for match in results:
 
 ## Usage Examples
 
+For CLI usage and interactive examples, see [docs/CLI.md](docs/CLI.md).
+
 ### Search by Concept
 
 Find all attributes related to measurement date:
@@ -284,7 +286,7 @@ ModelSearcher
 
 ## Development
 
-See [DEVELOPER.md](DEVELOPER.md) for setup, testing, and contribution guidelines.
+See [docs/DEVELOPER.md](docs/DEVELOPER.md) for setup, testing, and contribution guidelines.
 
 ## License
 
@@ -311,4 +313,4 @@ If you use odsbox-seman in research or production, please cite:
 
 ## Contributing
 
-Contributions welcome! Please see [DEVELOPER.md](DEVELOPER.md) for code standards and testing requirements.
+Contributions welcome! Please see [docs/DEVELOPER.md](docs/DEVELOPER.md) for code standards and testing requirements.

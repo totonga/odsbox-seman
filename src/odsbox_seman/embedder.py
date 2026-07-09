@@ -14,14 +14,11 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 
 from odsbox_seman.types import SemanticSearchUnavailableError
-
-if TYPE_CHECKING:
-    import numpy.typing as npt
 
 log = logging.getLogger(__name__)
 
@@ -60,7 +57,8 @@ def _normalize(embeddings: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
     """L2-normalise a batch of embedding vectors (in-place)."""
     norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
     norms = np.where(norms == 0, 1.0, norms)
-    return (embeddings / norms).astype(np.float32)
+    normalized: npt.NDArray[np.float32] = (embeddings / norms).astype(np.float32)
+    return normalized
 
 
 class OnnxEmbedder:

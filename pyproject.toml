@@ -25,6 +25,7 @@ dependencies = [
     "numpy>=1.24",
     "odsbox>=1.4.1",
     "onnxruntime>=1.27.0",
+    "prompt-toolkit>=3.0.0",
     "transformers>=4.35",
 ]
 
@@ -36,6 +37,9 @@ gpu = [
 npu = [
     "onnxruntime-directml>=1.24.4"
 ]
+cli = [
+    "prompt-toolkit>=3.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/totonga/odsbox-seman"
@@ -43,6 +47,9 @@ Repository = "https://github.com/totonga/odsbox-seman"
 Issues = "https://github.com/totonga/odsbox-seman/issues"
 Changelog = "https://github.com/totonga/odsbox-seman/releases"
 
+
+[project.scripts]
+odsbox-seman = "odsbox_seman.cli:main"
 
 [dependency-groups]
 dev = [
@@ -74,7 +81,7 @@ markers = [
 
 [tool.coverage.run]
 branch = true
-omit = ["*/__main__.py"]
+omit = ["*/__main__.py", "src/odsbox_seman/cli/repl.py"]
 
 [tool.coverage.report]
 precision = 2

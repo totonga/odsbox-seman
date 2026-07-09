@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from odsbox_seman.cli import main as cli_main
 from odsbox_seman.model_searcher import ModelSearcher
 from odsbox_seman.types import ModelMatch, SemanticSearchUnavailableError
 
@@ -12,4 +13,5 @@ __all__ = [
     "ModelSearcher",
     "SemanticSearchUnavailableError",
     "__version__",
+    "cli_main",
 ]
