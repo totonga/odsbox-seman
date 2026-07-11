@@ -1,6 +1,6 @@
 [project]
 name = "odsbox-seman"
-version = "0.1.0"
+version = "0.2.0"
 description = "Lightweight semantic search for ASAM ODS models using ONNX embeddings"
 readme = "README.md"
 license = "Apache-2.0"
@@ -50,6 +50,7 @@ Changelog = "https://github.com/totonga/odsbox-seman/releases"
 
 [project.scripts]
 odsbox-seman = "odsbox_seman.cli:main"
+
 
 [dependency-groups]
 dev = [
@@ -122,6 +123,7 @@ prerelease = false
 
 [tool.semantic_release.changelog]
 exclude_commit_patterns = ["^Merge", "^chore", "^docs", "^test", "^refactor", "^style", "^ci"]
+
 
 [build-system]
 requires = ["uv_build>=0.6,<0.12"]

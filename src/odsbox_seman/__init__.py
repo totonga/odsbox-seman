@@ -6,7 +6,7 @@ from odsbox_seman.cli import main as cli_main
 from odsbox_seman.model_searcher import ModelSearcher
 from odsbox_seman.types import ModelMatch, SemanticSearchUnavailableError
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "ModelMatch",
