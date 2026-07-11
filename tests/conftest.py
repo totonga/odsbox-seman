@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 import pytest
-
-if TYPE_CHECKING:
-    import numpy.typing as npt
 
 _DATA_DIR = Path(__file__).parent / "data"
 _NVH_MODEL_PATH = _DATA_DIR / "mdm_nvh_model.json"
@@ -36,6 +33,7 @@ def fake_embeddings():  # type: ignore[no-untyped-def]
         rng = np.random.default_rng(42)
         raw = rng.standard_normal((n, dim)).astype(np.float32)
         norms = np.linalg.norm(raw, axis=1, keepdims=True)
-        return (raw / norms).astype(np.float32)
+        normalized: npt.NDArray[np.float32] = (raw / norms).astype(np.float32)
+        return normalized
 
     return _make
