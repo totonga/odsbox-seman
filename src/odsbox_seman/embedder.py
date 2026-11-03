@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from threading import Lock
 
 import numpy as np
 import numpy.typing as npt
@@ -61,6 +62,26 @@ def _normalize(embeddings: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
     return normalized
 
 
+class _Tokenizer:
+    """Wraps a ``tokenizers.Tokenizer`` and returns numpy arrays."""
+
+    def __init__(self, path: Path) -> None:
+        from tokenizers import Tokenizer  # noqa: PLC0415
+
+        self._tok = Tokenizer.from_file(str(path))
+        pad_id = self._tok.token_to_id("<pad>") or 0
+        self._tok.enable_padding(pad_id=pad_id, pad_token="<pad>")
+        self._tok.enable_truncation(max_length=_MAX_LENGTH)
+
+    def __call__(self, texts: list[str]) -> dict[str, npt.NDArray[np.int64]]:
+        encodings = self._tok.encode_batch(texts)
+        return {
+            "input_ids": np.array([e.ids for e in encodings], dtype=np.int64),
+            "attention_mask": np.array([e.attention_mask for e in encodings], dtype=np.int64),
+            "token_type_ids": np.array([e.type_ids for e in encodings], dtype=np.int64),
+        }
+
+
 class OnnxEmbedder:
     """Loads the multilingual MiniLM ONNX model and encodes texts.
 
@@ -71,6 +92,7 @@ class OnnxEmbedder:
     def __init__(self) -> None:
         self._session: object | None = None
         self._tokenizer: object | None = None
+        self._load_lock = Lock()
 
     # ------------------------------------------------------------------
     # Lazy initialisation
@@ -78,36 +100,43 @@ class OnnxEmbedder:
 
     def _ensure_loaded(self) -> None:
         """Download (once) and initialise the ONNX model + tokenizer."""
-        if self._session is not None:
-            return
+        with self._load_lock:
+            if self._session is not None:
+                return
 
-        try:
-            from huggingface_hub import hf_hub_download  # noqa: PLC0415
-        except ImportError as exc:
-            raise _unavailable("huggingface-hub", "uv add huggingface-hub") from exc
+            try:
+                from huggingface_hub import hf_hub_download  # noqa: PLC0415
+            except ImportError as exc:
+                raise _unavailable("huggingface-hub", "uv add huggingface-hub") from exc
 
-        try:
-            import onnxruntime as ort  # noqa: PLC0415
-        except ImportError as exc:
-            raise _unavailable("onnxruntime", "uv add onnxruntime") from exc
+            try:
+                import onnxruntime as ort  # noqa: PLC0415
+            except ImportError as exc:
+                raise _unavailable("onnxruntime", "uv add onnxruntime") from exc
 
-        try:
-            from transformers import AutoTokenizer  # noqa: PLC0415
-        except ImportError as exc:
-            raise _unavailable("transformers", "uv add transformers") from exc
+            try:
+                import tokenizers  # noqa: F401, PLC0415
+            except ImportError as exc:
+                raise _unavailable("tokenizers", "uv add tokenizers") from exc
 
-        log.info("Downloading/loading ONNX model from HF Hub: %s …", _HF_REPO)
-        model_path: Path = Path(
-            hf_hub_download(
-                repo_id=_HF_REPO,
-                filename=f"{_ONNX_SUBFOLDER}/{_ONNX_FILENAME}",
-            )
-        )
+            def fetch(filename: str) -> Path:
+                # Cache first: a network call (and its HF Hub warnings) is only needed on first use.
+                try:
+                    return Path(
+                        hf_hub_download(repo_id=_HF_REPO, filename=filename, local_files_only=True)
+                    )
+                except Exception:  # noqa: BLE001
+                    log.info("Downloading %s from HF Hub: %s …", filename, _HF_REPO)
+                    return Path(hf_hub_download(repo_id=_HF_REPO, filename=filename))
 
-        providers = _detect_provider()
-        self._session = ort.InferenceSession(str(model_path), providers=providers)
-        self._tokenizer = AutoTokenizer.from_pretrained(_HF_REPO)
-        log.info("ONNX model loaded from %s", model_path)
+            model_path = fetch(f"{_ONNX_SUBFOLDER}/{_ONNX_FILENAME}")
+
+            providers = _detect_provider()
+            session = ort.InferenceSession(str(model_path), providers=providers)
+            tokenizer = _Tokenizer(fetch("tokenizer.json"))
+            self._tokenizer = tokenizer
+            self._session = session
+            log.info("ONNX model loaded from %s", model_path)
 
     # ------------------------------------------------------------------
     # Public API
@@ -149,13 +178,7 @@ class OnnxEmbedder:
         assert self._session is not None  # noqa: S101
 
         # Tokenise
-        encoded = self._tokenizer(  # type: ignore[operator]
-            texts,
-            padding=True,
-            truncation=True,
-            max_length=_MAX_LENGTH,
-            return_tensors="np",
-        )
+        encoded = self._tokenizer(texts)  # type: ignore[operator]
 
         # Run ONNX inference
         import onnxruntime as ort  # noqa: PLC0415

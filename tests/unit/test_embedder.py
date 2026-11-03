@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
+from threading import Event
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -93,6 +95,77 @@ class TestDetectProvider:
 
 
 class TestOnnxEmbedderInit:
+    def test_concurrent_initialization_waits_for_tokenizer(self, mocker: Any) -> None:
+        from odsbox_seman.embedder import OnnxEmbedder
+
+        hub = MagicMock()
+        hub.hf_hub_download.return_value = "/fake/model"
+        runtime = MagicMock()
+        mocker.patch.dict(
+            "sys.modules",
+            {"huggingface_hub": hub, "onnxruntime": runtime, "tokenizers": MagicMock()},
+        )
+        loading = Event()
+        release = Event()
+        second_started = Event()
+        tokenizer = MagicMock()
+
+        def construct(*args: Any) -> Any:
+            loading.set()
+            assert release.wait(5)
+            return tokenizer
+
+        factory = mocker.patch("odsbox_seman.embedder._Tokenizer", side_effect=construct)
+        embedder = OnnxEmbedder()
+
+        def load_second() -> None:
+            second_started.set()
+            embedder._ensure_loaded()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            first = pool.submit(embedder._ensure_loaded)
+            try:
+                assert loading.wait(5)
+                assert embedder._session is None
+                assert embedder._tokenizer is None
+                second = pool.submit(load_second)
+                assert second_started.wait(5)
+                with pytest.raises(TimeoutError):
+                    second.result(timeout=0.1)
+            finally:
+                release.set()
+            first.result(timeout=5)
+            second.result(timeout=5)
+        runtime.InferenceSession.assert_called_once()
+        factory.assert_called_once()
+        assert embedder._session is runtime.InferenceSession.return_value
+        assert embedder._tokenizer is tokenizer
+
+    def test_tokenizer_failure_allows_retry_from_another_thread(self, mocker: Any) -> None:
+        from odsbox_seman.embedder import OnnxEmbedder
+
+        hub = MagicMock()
+        hub.hf_hub_download.return_value = "/fake/model"
+        runtime = MagicMock()
+        mocker.patch.dict(
+            "sys.modules",
+            {"huggingface_hub": hub, "onnxruntime": runtime, "tokenizers": MagicMock()},
+        )
+        tokenizer = MagicMock()
+        mocker.patch(
+            "odsbox_seman.embedder._Tokenizer",
+            side_effect=[RuntimeError("bad tokenizer"), tokenizer],
+        )
+        embedder = OnnxEmbedder()
+        with pytest.raises(RuntimeError, match="bad tokenizer"):
+            embedder._ensure_loaded()
+        assert embedder._session is None
+        assert embedder._tokenizer is None
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            pool.submit(embedder._ensure_loaded).result(timeout=5)
+        assert embedder._session is runtime.InferenceSession.return_value
+        assert embedder._tokenizer is tokenizer
+
     def test_ensure_loaded_raises_when_onnxruntime_missing(self, mocker: Any) -> None:
         from odsbox_seman.embedder import OnnxEmbedder
 
@@ -101,14 +174,14 @@ class TestOnnxEmbedderInit:
             {
                 "onnxruntime": None,
                 "huggingface_hub": MagicMock(),
-                "transformers": MagicMock(),
+                "tokenizers": MagicMock(),
             },
         )
         embedder = OnnxEmbedder()
         with pytest.raises(SemanticSearchUnavailableError, match="onnxruntime"):
             embedder._ensure_loaded()
 
-    def test_ensure_loaded_raises_when_transformers_missing(self, mocker: Any) -> None:
+    def test_ensure_loaded_raises_when_tokenizers_missing(self, mocker: Any) -> None:
         from odsbox_seman.embedder import OnnxEmbedder
 
         mock_hub = MagicMock()
@@ -122,11 +195,11 @@ class TestOnnxEmbedderInit:
             {
                 "huggingface_hub": mock_hub,
                 "onnxruntime": mock_ort,
-                "transformers": None,
+                "tokenizers": None,
             },
         )
         embedder = OnnxEmbedder()
-        with pytest.raises(SemanticSearchUnavailableError, match="transformers"):
+        with pytest.raises(SemanticSearchUnavailableError, match="tokenizers"):
             embedder._ensure_loaded()
 
     def test_ensure_loaded_raises_when_hf_hub_missing(self, mocker: Any) -> None:
@@ -137,7 +210,7 @@ class TestOnnxEmbedderInit:
             {
                 "huggingface_hub": None,
                 "onnxruntime": MagicMock(),
-                "transformers": MagicMock(),
+                "tokenizers": MagicMock(),
             },
         )
         embedder = OnnxEmbedder()

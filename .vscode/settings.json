@@ -3,5 +3,8 @@
         "tests"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "evenBetterToml.schema.associations": {
+        "^.*odsbox-seman-config.*\\.toml$": "./src/odsbox_seman/odsbox-seman-config.schema.json"
+    }
 }

@@ -22,11 +22,11 @@ classifiers = [
 ]
 dependencies = [
     "huggingface-hub>=0.20.0",
+    "jsonschema>=4.26.0",
     "numpy>=1.24",
     "odsbox>=1.4.1",
     "onnxruntime>=1.27.0",
-    "prompt-toolkit>=3.0.0",
-    "transformers>=4.35",
+    "tokenizers>=0.15",
 ]
 
 [project.optional-dependencies]
@@ -39,6 +39,7 @@ npu = [
 ]
 cli = [
     "prompt-toolkit>=3.0.0",
+    "rich>=14.3.4",
 ]
 
 [project.urls]
@@ -55,12 +56,16 @@ odsbox-seman = "odsbox_seman.cli:main"
 [dependency-groups]
 dev = [
     "mypy>=1.20.2",
+    "odsbox>=1.4.1",
     "pip-audit>=2.9.0",
+    "prompt-toolkit>=3.0.0",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
     "pytest-mock>=3.14.0",
     "python-semantic-release>=9.0.0",
+    "rich>=14.3.4",
     "ruff>=0.15.20",
+    "types-jsonschema>=4.26.0.20261006",
 ]
 
 [tool.uv]
