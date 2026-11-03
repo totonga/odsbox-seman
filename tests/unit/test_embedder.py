@@ -65,7 +65,8 @@ class TestDetectProvider:
         assert providers[0] == "CUDAExecutionProvider"
         assert "CPUExecutionProvider" in providers
 
-    def test_prefers_dml_over_cpu(self, mocker: Any) -> None:
+    def test_prefers_dml_over_cpu_when_explicitly_allowed(self, mocker: Any) -> None:
+        mocker.patch.dict("os.environ", {"ODSBOX_SEMAN_ALLOW_DML": "1"}, clear=False)
         mock_ort = MagicMock()
         mock_ort.get_available_providers.return_value = [
             "DmlExecutionProvider",

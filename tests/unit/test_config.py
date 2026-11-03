@@ -107,6 +107,7 @@ def test_sample_config_loads() -> None:
     cfg = load_config(_SAMPLE)
     model = cfg.models["NVH"]
     assert cfg.default_model == "NVH"
+    assert model.model_file is not None
     assert model.model_file.is_file()
     assert "Tpl*" in model.blacklist.entities
     assert model.aliases.entities["MeaQuantity"] == ("Verlauf", "Signal")
