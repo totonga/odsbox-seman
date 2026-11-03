@@ -6,5 +6,8 @@
     "python.testing.pytestEnabled": true,
     "evenBetterToml.schema.associations": {
         "^.*odsbox-seman-config.*\\.toml$": "./src/odsbox_seman/odsbox-seman-config.schema.json"
+    },
+    "chat.tools.terminal.autoApprove": {
+        "uv": true
     }
 }
