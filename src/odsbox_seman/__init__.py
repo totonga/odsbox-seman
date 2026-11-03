@@ -17,7 +17,7 @@ from odsbox_seman.types import (
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
-__version__ = "0.2.0"
+__version__ = "1.0.0"
 
 
 def cli_main(argv: list[str] | None = None) -> int:

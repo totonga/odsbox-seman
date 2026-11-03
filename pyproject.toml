@@ -1,6 +1,6 @@
 [project]
 name = "odsbox-seman"
-version = "0.2.0"
+version = "1.0.0"
 description = "Lightweight semantic search for ASAM ODS models using ONNX embeddings"
 readme = "README.md"
 license = "Apache-2.0"
