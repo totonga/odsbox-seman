@@ -87,7 +87,7 @@ merged union; the CLI displays only its top ten:
 ```python
 result = searcher.search_multi("pressure", top_k=3, entity_name="Vehicle")
 for section in result.sections:
-	print(section.mode, section.matches, section.elapsed_seconds)
+    print(section.mode, section.matches, section.elapsed_seconds)
 print(result.merged, result.total_seconds)
 ```
 

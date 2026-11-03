@@ -13,11 +13,17 @@ Device selection priority (fastest first):
 from __future__ import annotations
 
 import logging
+import os
+import platform
 from pathlib import Path
 from threading import Lock
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
+
+if TYPE_CHECKING:
+    import onnxruntime as ort
 
 from odsbox_seman.types import SemanticSearchUnavailableError
 
@@ -32,18 +38,32 @@ _MAX_LENGTH = 512
 _BATCH_SIZE = 64  # encode corpus in chunks to avoid OOM on large models
 
 
+def _env_flag(name: str) -> bool:
+    """Return True when an environment flag is enabled via common truthy values."""
+    value = os.environ.get(name, "")
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _detect_provider() -> list[str]:
     """Return the best available ONNX Runtime execution provider list."""
+    force_cpu = _env_flag("ODSBOX_SEMAN_FORCE_CPU")
+    allow_dml = _env_flag("ODSBOX_SEMAN_ALLOW_DML")
+
+    if force_cpu:
+        log.info("Semantic search: forcing CPUExecutionProvider via ODSBOX_SEMAN_FORCE_CPU=1.")
+        return ["CPUExecutionProvider"]
+
     try:
         import onnxruntime as ort  # noqa: PLC0415
 
         available = ort.get_available_providers()
+        windows = platform.system() == "Windows"
 
         if "CUDAExecutionProvider" in available:
             log.info("Semantic search: using CUDAExecutionProvider.")
             return ["CUDAExecutionProvider", "CPUExecutionProvider"]
 
-        if "DmlExecutionProvider" in available:
+        if (not windows or allow_dml) and "DmlExecutionProvider" in available:
             log.info("Semantic search: using DmlExecutionProvider (DirectML).")
             return ["DmlExecutionProvider", "CPUExecutionProvider"]
 
@@ -90,8 +110,10 @@ class OnnxEmbedder:
     """
 
     def __init__(self) -> None:
-        self._session: object | None = None
+        self._session: ort.InferenceSession | None = None
         self._tokenizer: object | None = None
+        self._model_path: Path | None = None
+        self._providers: list[str] | None = None
         self._load_lock = Lock()
 
     # ------------------------------------------------------------------
@@ -132,11 +154,43 @@ class OnnxEmbedder:
             model_path = fetch(f"{_ONNX_SUBFOLDER}/{_ONNX_FILENAME}")
 
             providers = _detect_provider()
-            session = ort.InferenceSession(str(model_path), providers=providers)
+            self._model_path = model_path
+            self._providers = providers
+            try:
+                session = ort.InferenceSession(str(model_path), providers=providers)
+            except Exception:  # noqa: BLE001
+                log.warning(
+                    "Failed to initialise ONNX model with providers %s; retrying on CPU.",
+                    providers,
+                )
+                session = ort.InferenceSession(str(model_path), providers=["CPUExecutionProvider"])
+                self._providers = ["CPUExecutionProvider"]
             tokenizer = _Tokenizer(fetch("tokenizer.json"))
             self._tokenizer = tokenizer
             self._session = session
-            log.info("ONNX model loaded from %s", model_path)
+            log.info("ONNX model loaded from %s with providers %s", model_path, self._providers)
+
+    def _fallback_to_cpu(self) -> None:
+        """Retry the model on CPU when a GPU provider becomes unstable at runtime."""
+        if self._model_path is None or self._session is None:
+            return
+
+        if self._providers == ["CPUExecutionProvider"]:
+            return
+
+        try:
+            import onnxruntime as ort  # noqa: PLC0415
+        except ImportError:
+            return
+
+        log.warning(
+            "ONNX inference failed with providers %s; retrying on CPU.",
+            self._providers,
+        )
+        self._session = ort.InferenceSession(
+            str(self._model_path), providers=["CPUExecutionProvider"]
+        )
+        self._providers = ["CPUExecutionProvider"]
 
     # ------------------------------------------------------------------
     # Public API
@@ -181,7 +235,6 @@ class OnnxEmbedder:
         encoded = self._tokenizer(texts)  # type: ignore[operator]
 
         # Run ONNX inference
-        import onnxruntime as ort  # noqa: PLC0415
 
         session: ort.InferenceSession = self._session
         input_names = {inp.name for inp in session.get_inputs()}
@@ -199,7 +252,12 @@ class OnnxEmbedder:
             else:
                 ort_inputs["token_type_ids"] = np.zeros_like(input_ids)
 
-        outputs = session.run(None, ort_inputs)
+        try:
+            outputs = session.run(None, ort_inputs)
+        except Exception:  # noqa: BLE001
+            self._fallback_to_cpu()
+            assert self._session is not None  # noqa: S101
+            outputs = self._session.run(None, ort_inputs)
 
         # Mean-pool the last hidden state over non-padding tokens
         last_hidden: npt.NDArray[np.float32] = outputs[0]

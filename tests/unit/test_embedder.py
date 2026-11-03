@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from odsbox_seman.embedder import _detect_provider, _normalize
+from odsbox_seman.embedder import _detect_provider, _env_flag, _normalize
 from odsbox_seman.types import SemanticSearchUnavailableError
 
 
@@ -46,6 +46,9 @@ class TestNormalize:
 
 
 class TestDetectProvider:
+    def test_env_flag_accepts_common_truthy_values(self) -> None:
+        assert _env_flag("ODSBOX_SEMAN_ALLOW_DML") is False
+
     def test_returns_cpu_by_default(self, mocker: Any) -> None:
         """When no GPU providers are available, CPU is returned."""
         mock_ort = MagicMock()
@@ -65,7 +68,8 @@ class TestDetectProvider:
         assert providers[0] == "CUDAExecutionProvider"
         assert "CPUExecutionProvider" in providers
 
-    def test_prefers_dml_over_cpu(self, mocker: Any) -> None:
+    def test_prefers_dml_over_cpu_when_explicitly_allowed(self, mocker: Any) -> None:
+        mocker.patch.dict("os.environ", {"ODSBOX_SEMAN_ALLOW_DML": "1"}, clear=False)
         mock_ort = MagicMock()
         mock_ort.get_available_providers.return_value = [
             "DmlExecutionProvider",
@@ -75,6 +79,18 @@ class TestDetectProvider:
         providers = _detect_provider()
         assert providers[0] == "DmlExecutionProvider"
         assert "CPUExecutionProvider" in providers
+
+    def test_dml_is_not_used_by_default_on_windows(self, mocker: Any) -> None:
+        mocker.patch("odsbox_seman.embedder.platform.system", return_value="Windows")
+        mocker.patch.dict("os.environ", {}, clear=False)
+        mock_ort = MagicMock()
+        mock_ort.get_available_providers.return_value = [
+            "DmlExecutionProvider",
+            "CPUExecutionProvider",
+        ]
+        mocker.patch.dict("sys.modules", {"onnxruntime": mock_ort})
+        providers = _detect_provider()
+        assert providers == ["CPUExecutionProvider"]
 
     def test_falls_back_to_cpu_on_import_error(self, mocker: Any) -> None:
         """If onnxruntime import fails during detection, fall back to CPU list."""

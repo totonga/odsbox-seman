@@ -53,17 +53,17 @@ To configure a `ModelSearcher` directly, construct a per-model config:
 from odsbox_seman import AliasConfig, BlacklistConfig, ModelConfig
 
 model_config = ModelConfig(
-  name="NVH",
-  alias_boost=0.15,
-  aliases=AliasConfig(
-    entities={"MeaResult": ("Messung",)},
-    attributes={"Vehicle": {"description": ("Comment",)}},
-    enumerations={"valid_enum": {"valid": ("gueltig",)}},
-  ),
-  blacklist=BlacklistConfig(
-    entities=("Tpl*", "Cat*"),
-    attributes=("version",),
-  ),
+    name="NVH",
+    alias_boost=0.15,
+    aliases=AliasConfig(
+        entities={"MeaResult": ("Messung",)},
+        attributes={"Vehicle": {"description": ("Comment",)}},
+        enumerations={"valid_enum": {"valid": ("gueltig",)}},
+    ),
+    blacklist=BlacklistConfig(
+        entities=("Tpl*", "Cat*"),
+        attributes=("version",),
+    ),
 )
 ```
 

@@ -55,7 +55,9 @@ DirectML (Windows native GPU) support is available via the `npu` extra:
 pip install odsbox-seman[npu]
 ```
 
-The package will auto-detect and use DirectML if available.
+The package will auto-detect and use DirectML only when explicitly enabled on Windows with
+`ODSBOX_SEMAN_ALLOW_DML=1`; DirectML can be unstable on some Copilot+ NPUs and is therefore
+kept off by default to avoid model crashes. CPU is used otherwise.
 
 ## Quick Start
 

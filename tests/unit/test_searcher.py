@@ -330,7 +330,11 @@ class TestMultiSearch:
 class TestCaching:
     @pytest.mark.parametrize("separate_instances", [False, True])
     def test_concurrent_initialization_builds_once(
-        self, nvh_model: Any, tmp_path: Path, separate_instances: bool
+        self,
+        nvh_model: Any,
+        tmp_path: Path,
+        separate_instances: bool,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         first = ModelSearcher(nvh_model, cache_dir=tmp_path)
         second = ModelSearcher(nvh_model, cache_dir=tmp_path) if separate_instances else first
@@ -348,7 +352,7 @@ class TestCaching:
         embedder.encode.side_effect = encode
         first._embedder = second._embedder = embedder
         save = MagicMock(wraps=first._cache.save)
-        first._cache.save = save
+        monkeypatch.setattr(first._cache, "save", save)
 
         def load_second() -> None:
             second_started.set()
