@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 
 from odsbox_seman.model_searcher import ModelSearcher
+from odsbox_seman.tokenizer import tokenize
 from odsbox_seman.types import ModelMatch
 
 # ---------------------------------------------------------------------------
@@ -49,9 +50,11 @@ class TestCorpusCoverage:
         attr_entries = [(t, m) for t, m in idx._corpus if m.kind == "attribute"]
         assert attr_entries, "No attribute entries found"
         text, match = attr_entries[0]
+        entity_tokens = tokenize(match.entity_name)
+        base_tokens = tokenize(match.entity_base_name)
         assert (
-            match.entity_name.lower() in text.lower()
-            or match.entity_base_name.lower().replace("ao", "").strip() in text
+            entity_tokens in text.lower()
+            or base_tokens in text.lower()
         )
 
     def test_enumeration_text_includes_enum_name(self, nvh_model: Any) -> None:
