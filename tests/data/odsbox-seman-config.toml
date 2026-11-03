@@ -1,0 +1,21 @@
+#:schema ../../src/odsbox_seman/odsbox-seman-config.schema.json
+
+[settings]
+default_model = "NVH"
+
+[models.NVH]
+model_file = "mdm_nvh_model.json"
+
+[models.NVH.blacklist]
+entities = ["Tpl*", "Cat*", "MDM*", "Rights*", "AoNameMap", "AoAttributeMap"]
+attributes = ["version"]
+
+[models.NVH.aliases.entities]
+Project = ["Project"]
+StructureLevel = ["SubProject"]
+Test = ["Versuch"]
+MeaResult = ["Messung"]
+MeaQuantity = ["Verlauf", "Signal"]
+
+[models.NVH.aliases.attributes.Vehicle]
+description = ["Comment"]

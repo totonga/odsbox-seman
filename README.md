@@ -32,6 +32,13 @@ or with `uv`:
 uv add odsbox-seman
 ```
 
+The Python API does not require CLI packages. To install the interactive and batch
+command-line tool, install the `cli` extra:
+
+```bash
+pip install "odsbox-seman[cli]"
+```
+
 ### GPU Support (CUDA on Linux/Windows)
 
 ```bash
@@ -92,6 +99,8 @@ for match in results:
 ## Usage Examples
 
 For CLI usage and interactive examples, see [docs/CLI.md](docs/CLI.md).
+For the configuration file (blacklists, aliases, global aliases), see
+[docs/CONFIG.md](docs/CONFIG.md).
 
 ### Search by Concept
 
@@ -208,7 +217,7 @@ Result of a search query.
 
 ### `SemanticSearchUnavailableError`
 
-Raised when a required dependency is missing (e.g., `onnxruntime`, `transformers`).
+Raised when a required dependency is missing (e.g., `onnxruntime`, `tokenizers`).
 
 ## Troubleshooting
 
@@ -222,12 +231,12 @@ pip install onnxruntime
 pip install onnxruntime-gpu
 ```
 
-### "Semantic search requires 'transformers'"
+### "Semantic search requires 'tokenizers'"
 
-Install the HuggingFace transformers library:
+Install the HuggingFace tokenizers library:
 
 ```bash
-pip install transformers
+pip install tokenizers
 ```
 
 ### "Semantic search requires 'huggingface-hub'"

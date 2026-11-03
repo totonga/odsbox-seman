@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/totonga/odsbox-seman/odsbox-seman-config.schema.json",
+  "title": "odsbox-seman configuration",
+  "description": "Configuration of one or more ASAM ODS models for semantic search.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["models"],
+  "properties": {
+    "settings": {
+      "title": "Global settings",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "default_model": {
+          "title": "Default model",
+          "description": "Name of the model used at start. Defaults to the first model.",
+          "type": "string",
+          "minLength": 1
+        },
+        "alias_boost": {
+          "$ref": "#/$defs/aliasBoost"
+        },
+        "aliases": {
+          "title": "Global aliases",
+          "description": "Aliases applied to every model; merged with the model's own aliases.",
+          "$ref": "#/$defs/aliases"
+        }
+      }
+    },
+    "models": {
+      "title": "Models",
+      "description": "Named models, each in its own [models.<NAME>] table.",
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "minLength": 1 },
+      "additionalProperties": { "$ref": "#/$defs/model" }
+    }
+  },
+  "$defs": {
+    "aliasBoost": {
+      "title": "Alias boost",
+      "description": "Score added to matches that were found via an alias (0..1, default 0.1).",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "nameList": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "aliasList": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "model": {
+      "title": "Model",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model_file": {
+          "title": "Model file",
+          "description": "Optional ODS model JSON file, relative to this config file. Required by the CLI; omit when supplying a parsed model through the Python API.",
+          "type": "string",
+          "minLength": 1
+        },
+        "alias_boost": {
+          "$ref": "#/$defs/aliasBoost"
+        },
+        "blacklist": {
+          "title": "Blacklist",
+          "description": "Case-insensitive glob patterns matched against name and base_name.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "entities": {
+              "title": "Entity patterns",
+              "description": "Matching entities are excluded together with their attributes and relations.",
+              "$ref": "#/$defs/nameList"
+            },
+            "attributes": {
+              "title": "Attribute patterns",
+              "description": "Matching attributes are excluded from all entities.",
+              "$ref": "#/$defs/nameList"
+            }
+          }
+        },
+        "aliases": {
+          "$ref": "#/$defs/aliases"
+        }
+      }
+    },
+    "aliases": {
+      "title": "Aliases",
+      "description": "Additional search terms ranked above plain model entries.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "entities": {
+          "title": "Entity aliases",
+          "description": "Entity name -> aliases.",
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/aliasList" }
+        },
+        "attributes": {
+          "title": "Attribute aliases",
+          "description": "Entity name -> attribute name -> aliases.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "$ref": "#/$defs/aliasList" }
+          }
+        },
+        "enumerations": {
+          "title": "Enumeration value aliases",
+          "description": "Enumeration name -> enumeration item -> aliases.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "$ref": "#/$defs/aliasList" }
+          }
+        }
+      }
+    }
+  }
+}

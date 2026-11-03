@@ -166,3 +166,16 @@ class TestIntrospectionWithEmbeddings:
         result = searcher.find_date_attribute("MeaResult")
         assert isinstance(result, str)
         assert len(result) > 0
+
+
+class TestConfigAliases:
+    def test_alias_finds_entity(self, nvh_model: Any, tmp_path: Path) -> None:
+        from odsbox_seman.config import load_config
+        from odsbox_seman.model_searcher import ModelSearcher
+
+        cfg = load_config(Path(__file__).parent.parent / "data" / "odsbox-seman-config.toml")
+        idx = ModelSearcher(nvh_model, cache_dir=tmp_path, config=cfg.models["NVH"])
+        idx.warm_up()
+
+        top = [m for m in idx.search("Messung", top_k=10) if m.kind == "entity"]
+        assert top[0].item_name == "MeaResult"

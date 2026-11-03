@@ -240,7 +240,7 @@ ModelSearcher
     │   ├─ Lazy load: download model from HF Hub (first use only)
     │   ├─ Auto-detect provider: CUDA → DirectML → CPU
     │   ├─ Batch encode: split corpus into chunks of 64
-    │   ├─ Tokenize with transformers.AutoTokenizer
+    │   ├─ Tokenize with tokenizers.Tokenizer
     │   ├─ Run ONNX inference
     │   └─ Mean-pool + L2-normalize embeddings
     │
@@ -266,8 +266,16 @@ ModelSearcher
 
 **`CacheManager`** (cache.py)
 - Manages embedding disk cache
-- Key: SHA-256 hash of model protobuf
-- Stores: `{hash}.npz` (embeddings) + `{hash}.json` (corpus metadata)
+- Key: SHA-256 hash of model protobuf plus the config fingerprint (blacklists and aliases)
+- Stores: `{hash}.npz` (embeddings + `alias_flags`) + `{hash}.json` (corpus metadata)
+
+**`ModelConfig`** (config.py)
+- Per-model settings loaded from the TOML config via `load_config`
+- Validated with `odsbox-seman-config.schema.json`; all errors collected in one `ConfigError`
+- Global `[settings.aliases]` are merged into every model's aliases at load time (see docs/CONFIG.md)
+
+**`CorpusStats`** (types.py)
+- Kept/total counts and blacklisted names, exposed as `ModelSearcher.stats` and shown by the CLI `info` command
 
 **`ModelMatch`** (types.py)
 - Dataclass representing a search result
@@ -344,6 +352,10 @@ CI automatically bumps the version and publishes to PyPI when these commits land
 ## Debugging
 
 ### Enable Debug Logging
+
+From the CLI use `-v` (INFO) or `-vv` (DEBUG); logs go to stderr.
+
+From Python:
 
 ```python
 import logging

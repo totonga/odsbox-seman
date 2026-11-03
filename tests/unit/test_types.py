@@ -2,7 +2,18 @@
 
 from __future__ import annotations
 
+from odsbox_seman import MultiSearchResult, SearchSection
 from odsbox_seman.types import ModelMatch, SemanticSearchUnavailableError
+
+
+def test_multi_result_types_are_public() -> None:
+    match = ModelMatch("entity", "Vehicle", "AoVehicle", "Vehicle", "", 0, 0.9)
+    section = SearchSection("all", [match], 0.001)
+    result = MultiSearchResult([section], [match], 0.010, 0.002, 0.013)
+    assert result.sections[0].mode == "all"
+    assert result.sections[0].matches == result.merged
+    assert result.sections[0].elapsed_seconds == 0.001
+    assert result.total_seconds == 0.013
 
 
 class TestModelMatch:
